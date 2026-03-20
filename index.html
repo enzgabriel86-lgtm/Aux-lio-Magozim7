@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Precision Exe</title>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(#007bff,#001a33);
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:white;
+  overflow:hidden;
+}
+
+/* chuva */
+.rain{
+  position:fixed;
+  width:100%;
+  height:100%;
+  top:0;
+  left:0;
+  z-index:0;
+}
+
+.rain span{
+  position:absolute;
+  width:2px;
+  height:20px;
+  background:#66ccff;
+  opacity:0.4;
+  animation:fall linear infinite;
+}
+
+@keyframes fall{
+  from{transform:translateY(-100px);}
+  to{transform:translateY(100vh);}
+}
+
+/* raio */
+#raioCanvas{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:1;
+  pointer-events:none;
+}
+
+/* MIRA */
+#crosshair{
+  position:fixed;
+  top:50%;
+  left:50%;
+  width:18px;
+  height:18px;
+  transform:translate(-50%,-50%);
+  border:2px solid #00c6ff;
+  border-radius:50%;
+  box-shadow:0 0 10px #00c6ff;
+  pointer-events:none;
+  z-index:3;
+  display:none;
+  transition:0.1s;
+}
+
+/* card */
+.card{
+  width:330px;
+  background:rgba(0,0,0,0.35);
+  padding:25px;
+  border-radius:20px;
+  text-align:center;
+  box-shadow:0 0 25px #0099ff;
+  position:relative;
+  z-index:2;
+}
+
+.btn{
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  width:100%;
+  margin-top:10px;
+  cursor:pointer;
+  font-weight:bold;
+  background:linear-gradient(90deg,#0099ff,#00c6ff);
+  color:white;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+}
+
+.row .btn{
+  width:48%;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  margin-top:10px;
+}
+
+.hidden{
+  display:none;
+}
+
+.status{
+  margin-top:10px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<!-- FUNDO -->
+<div class="rain" id="rain"></div>
+<canvas id="raioCanvas"></canvas>
+<div id="crosshair"></div>
+
+<!-- TELA 1 -->
+<div class="card" id="telaKey">
+  <h1>Digite sua Key</h1>
+  <input id="key" placeholder="Digite a key">
+  <button class="btn" onclick="validarKey()">Entrar</button>
+  <div class="status" id="statusKey"></div>
+</div>
+
+<!-- TELA 2 -->
+<div class="card hidden" id="telaApp">
+  <h1>Precision Exe</h1>
+
+  <div class="row">
+    <button class="btn" onclick="selecionar('ff')">Free Fire</button>
+    <button class="btn" onclick="selecionar('ffmax')">Free Fire Max</button>
+  </div>
+
+  <div id="selecionado">Nenhum jogo selecionado</div>
+
+  <button class="btn" id="btnAtivar" onclick="ativar()">
+    Ativar Precision
+  </button>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const KEY_VALIDA = "Magozim";
+let jogo = "";
+let ativo = false;
+
+let crosshair = document.getElementById("crosshair");
+let assistInterval;
+
+// chuva
+const rain = document.getElementById("rain");
+for(let i=0;i<120;i++){
+  let drop = document.createElement("span");
+  drop.style.left = Math.random()*100+"vw";
+  drop.style.animationDuration = (Math.random()*1+0.5)+"s";
+  rain.appendChild(drop);
+}
+
+// raio desenhado
+const canvas = document.getElementById("raioCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function desenharRaio(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  let x = Math.random() * canvas.width;
+  let y = 0;
+
+  ctx.beginPath();
+  ctx.moveTo(x,y);
+
+  for(let i=0;i<25;i++){
+    x += (Math.random() - 0.5) * 60;
+    y += Math.random() * 35;
+    ctx.lineTo(x,y);
+  }
+
+  ctx.strokeStyle = "#66ccff";
+  ctx.lineWidth = 2;
+  ctx.shadowColor = "#00c6ff";
+  ctx.shadowBlur = 20;
+  ctx.stroke();
+
+  setTimeout(()=>{
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  },120);
+}
+
+setInterval(()=>{
+  if(Math.random() > 0.7){
+    desenharRaio();
+  }
+},2000);
+
+// validar key
+function validarKey(){
+  let key = document.getElementById("key").value;
+  let status = document.getElementById("statusKey");
+
+  if(key === KEY_VALIDA){
+    document.getElementById("telaKey").classList.add("hidden");
+    document.getElementById("telaApp").classList.remove("hidden");
+  } else {
+    status.innerHTML = "Key inválida ❌";
+    status.style.color = "red";
+  }
+}
+
+// selecionar jogo
+function selecionar(tipo){
+  jogo = tipo;
+
+  if(tipo === "ff"){
+    document.getElementById("selecionado").innerHTML =
+    "Selecionado: Free Fire";
+  } else {
+    document.getElementById("selecionado").innerHTML =
+    "Selecionado: Free Fire Max";
+  }
+}
+
+// voz
+function falar(msg){
+  let speech = new SpeechSynthesisUtterance(msg);
+  speech.lang = "pt-BR";
+  speech.rate = 0.9;
+  speech.pitch = 0.6;
+  speechSynthesis.speak(speech);
+}
+
+// efeito assist (simulação)
+function iniciarAssist(){
+  assistInterval = setInterval(()=>{
+    let offsetX = (Math.random() - 0.5) * 4;
+    let offsetY = (Math.random() - 0.5) * 4;
+
+    crosshair.style.transform =
+      `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+
+    // muda cor (tipo “grudou”)
+    if(Math.random() > 0.7){
+      crosshair.style.borderColor = "red";
+    } else {
+      crosshair.style.borderColor = "#00c6ff";
+    }
+
+  },100);
+}
+
+function pararAssist(){
+  clearInterval(assistInterval);
+  crosshair.style.transform = "translate(-50%,-50%)";
+}
+
+// ativar/desativar
+function ativar(){
+  let status = document.getElementById("status");
+  let botao = document.getElementById("btnAtivar");
+
+  if(!jogo){
+    status.innerHTML = "Escolha um jogo ⚠️";
+    status.style.color = "yellow";
+    return;
+  }
+
+  if(!ativo){
+    ativo = true;
+    status.innerHTML = "PRECISION ON ✅";
+    status.style.color = "#00ffcc";
+    botao.innerHTML = "Desativar Precision";
+
+    falar("Precision mira ativado");
+
+    crosshair.style.display = "block";
+    iniciarAssist();
+
+    if(jogo === "ff"){
+      window.location.href =
+      "intent://#Intent;package=com.dts.freefireth;end";
+    } else {
+      window.location.href =
+      "intent://#Intent;package=com.dts.freefiremax;end";
+    }
+
+  } else {
+    ativo = false;
+    status.innerHTML = "PRECISION OFF 🚫";
+    status.style.color = "white";
+    botao.innerHTML = "Ativar Precision";
+
+    falar("Precision mira desativado");
+
+    crosshair.style.display = "none";
+    pararAssist();
+  }
+}
+</script>
+
+</body>
+</html>
